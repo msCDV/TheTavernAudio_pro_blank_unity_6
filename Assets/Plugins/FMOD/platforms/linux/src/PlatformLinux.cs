@@ -9,7 +9,7 @@ namespace FMOD
 {
     public partial class VERSION
     {
-        public const string dll = "fmodstudio" + dllSuffix;
+        public const string dll = "fmodstudio" + suffix;
     }
 }
 
@@ -17,7 +17,7 @@ namespace FMOD.Studio
 {
     public partial class STUDIO_VERSION
     {
-        public const string dll = "fmodstudio" + dllSuffix;
+        public const string dll = "fmodstudio" + VERSION.suffix;
     }
 }
 #endif
@@ -72,7 +72,9 @@ namespace FMODUnity
 
         protected override IEnumerable<string> GetObsoleteFiles()
         {
+            yield return "lib/linux/x86/libfmodstudio.so";
             yield return "platforms/linux/lib/x86/libfmodstudio.so";
+            yield return "lib/linux/x86/libfmodstudioL.so";
             yield return "platforms/linux/lib/x86/libfmodstudioL.so";
         }
 #endif
@@ -104,5 +106,12 @@ namespace FMODUnity
             new CodecChannelCount { format = CodecType.FADPCM, channels = 0 },
             new CodecChannelCount { format = CodecType.Vorbis, channels = 32 },
         };
+
+        internal override FMOD.THREAD_STACK_SIZE GetStackSize() { return staticGetStackSize(); }
+
+        internal static FMOD.THREAD_STACK_SIZE staticGetStackSize()
+        {
+            return Settings.Instance.LoggingLevel != FMOD.DEBUG_FLAGS.NONE ? (FMOD.THREAD_STACK_SIZE)(1024 * 1024) : FMOD.THREAD_STACK_SIZE.DEFAULT;
+        }
     }
 }

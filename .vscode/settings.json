@@ -51,5 +51,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "TheTavernAudio_pro_blank_refactor.sln"
+    "dotnet.defaultSolution": "TheTavernAudio_pro_blank_unity_6.slnx"
 }

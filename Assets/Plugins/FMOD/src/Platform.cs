@@ -9,30 +9,6 @@ using UnityEngine.Serialization;
 using UnityEditor;
 #endif
 
-namespace FMOD
-{
-    public partial class VERSION
-    {
-#if DEVELOPMENT_BUILD
-        public const string dllSuffix = "L";
-#else
-        public const string dllSuffix = "";
-#endif
-    }
-}
-
-namespace FMOD.Studio
-{
-    public partial class STUDIO_VERSION
-    {
-#if DEVELOPMENT_BUILD
-        public const string dllSuffix = "L";
-#else
-        public const string dllSuffix = "";
-#endif
-    }
-}
-
 namespace FMODUnity
 {
     public class PlatformCallbackHandler : ScriptableObject
@@ -272,7 +248,7 @@ namespace FMODUnity
                     case FileLayout.Release_1_10:
                         return info.path_1_10;
                     case FileLayout.Release_2_0:
-                        return string.Format("Plugins/FMOD/lib/{0}", info.baseName);
+                        return string.Format("Assets/Plugins/FMOD/lib/{0}", info.baseName);
                     case FileLayout.Release_2_1:
                     case FileLayout.Release_2_2:
                         return $"{RuntimeUtils.PluginBasePath}/platforms/{info.baseName}/lib";
@@ -421,6 +397,7 @@ namespace FMODUnity
             foreach (string path in GetObsoleteFiles())
             {
                 yield return $"{RuntimeUtils.PluginBasePath}/{path}";
+                yield return $"{RuntimeUtils.PluginBasePathDefault}/{path}";
             }
         }
 
@@ -538,14 +515,15 @@ namespace FMODUnity
 
                 FMOD.RESULT result = coreSystem.loadPlugin(pluginPath, out handle);
 
-#if UNITY_64 || UNITY_EDITOR_64
-                // Add a "64" suffix and try again
                 if (result == FMOD.RESULT.ERR_FILE_BAD || result == FMOD.RESULT.ERR_FILE_NOTFOUND)
                 {
-                    string pluginPath64 = GetPluginPath(pluginName + "64");
-                    result = coreSystem.loadPlugin(pluginPath64, out handle);
+                    if (Environment.Is64BitProcess)
+                    {
+                        // Add a "64" suffix and try again
+                        string pluginPath64 = GetPluginPath(string.Format("{0}64", pluginName));
+                        result = coreSystem.loadPlugin(pluginPath64, out handle);
+                    }
                 }
-#endif
 
                 reportResult(result, string.Format("Loading plugin '{0}' from '{1}'", pluginName, pluginPath));
             }
@@ -568,9 +546,9 @@ namespace FMODUnity
 
                 if (type == null)
                 {
-                    RuntimeUtils.DebugLogWarningFormat(
+                    RuntimeUtils.DebugLogWarning(string.Format(
                         "FMOD: {0} static plugins specified, but the {1} class was not found.",
-                        StaticPlugins.Count, className);
+                        StaticPlugins.Count.ToString(), className));
                     return;
                 }
 
@@ -579,17 +557,17 @@ namespace FMODUnity
 
                 if (method == null)
                 {
-                    RuntimeUtils.DebugLogWarningFormat(
+                    RuntimeUtils.DebugLogWarning(string.Format(
                         "FMOD: {0} static plugins specified, but the {1}.{2} method was not found.",
-                        StaticPlugins.Count, className, RegisterStaticPluginsFunctionName);
+                        StaticPlugins.Count.ToString(), className, RegisterStaticPluginsFunctionName));
                     return;
                 }
 
                 method.Invoke(null, new object[] { coreSystem, reportResult });
 #else
-                RuntimeUtils.DebugLogWarningFormat(
+                RuntimeUtils.DebugLogWarning(string.Format(
                     "FMOD: {0} static plugins specified, but static plugins are only supported on the IL2CPP scripting backend",
-                    StaticPlugins.Count);
+                    StaticPlugins.Count.ToString()));
 #endif
             }
         }
@@ -689,6 +667,7 @@ namespace FMODUnity
         }
 
         // A property value that can be inherited from the parent or overridden.
+        [Serializable]
         public class Property<T>
         {
             public T Value;
@@ -995,6 +974,11 @@ namespace FMODUnity
                     return DefaultThreadAffinities;
                 }
             }
+        }
+
+        internal virtual FMOD.THREAD_STACK_SIZE GetStackSize()
+        {
+            return FMOD.THREAD_STACK_SIZE.DEFAULT;
         }
 
         internal PropertyThreadAffinityList ThreadAffinitiesProperty { get { return threadAffinities; } }
