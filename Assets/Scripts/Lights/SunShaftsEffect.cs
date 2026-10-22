@@ -37,7 +37,7 @@ public class SunShaftsEffect : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Nie znaleziono shadera Hidden/SunShaftsPostProcess lub nie jest on wspierany!");
+            Debug.LogError("Nie znaleziono shadera Hidden/SunShaftsPostProcess!");
             enabled = false;
         }
     }
@@ -58,34 +58,28 @@ public class SunShaftsEffect : MonoBehaviour
             return;
         }
 
-        // Prawdziwy kierunek do słońca w świecie 3D
+        // Kierunek OD ziemi DO słońca w świecie 3D
         Vector3 worldDirToSun = -sunTransform.forward;
 
-        // Przeliczamy kierunek słońca względem aktualnego obrotu kamery
+        // Przeliczamy ten wektor na układ kamery (X = prawo/lewo, Y = góra/dół, Z = przód/tył)
         Vector3 localSunDir = cam.transform.InverseTransformDirection(worldDirToSun);
 
-        Vector2 sunScreenPos;
-
-        if (localSunDir.z > 0.05f)
-        {
-            // Słońce jest przed nami lub z boku – używamy dokładnej pozycji na ekranie
-            Vector3 viewPos = cam.WorldToViewportPoint(cam.transform.position + worldDirToSun * 1000f);
-            sunScreenPos = new Vector2(viewPos.x, viewPos.y);
-        }
+        // Wyznaczamy kierunek padania promieni na ekranie 2D z poprawką na proporcje ekranu (aspect ratio)
+        Vector2 rayDir2D = new Vector2(localSunDir.x / cam.aspect, localSunDir.y);
+        if (rayDir2D.sqrMagnitude < 0.0001f)
+            rayDir2D = Vector2.up;
         else
-        {
-            // Słońce jest za plecami lub pod kątem > 90 stopni:
-            // Nie wrzucamy go na środek ekranu (żeby nie świeciło w twarz),
-            // tylko umieszczamy źródło daleko poza odpowiednią krawędzią ekranu (góra/bok),
-            // zachowując oryginalny kąt padania promieni.
-            Vector2 dir2D = new Vector2(localSunDir.x, localSunDir.y);
-            if (dir2D.sqrMagnitude < 0.001f) dir2D = Vector2.up;
-            dir2D.Normalize();
+            rayDir2D.Normalize();
 
-            sunScreenPos = new Vector2(0.5f, 0.5f) + dir2D * 2.5f;
-        }
+        // Sprawdzamy, czy słońce jest bezpośrednio w kadrze przed nami
+        Vector3 viewPos = cam.WorldToViewportPoint(cam.transform.position + worldDirToSun * 1000f);
+        
+        // Płynne przejście (blend) między promieniami rozchodzącymi się z tarczy słońca (gdy patrzysz prosto w nie)
+        // a równoległymi promieniami padającymi pod stałym kątem (gdy patrzysz w bok lub tyłem)
+        float radialBlend = Mathf.Clamp01(localSunDir.z);
 
-        sunShaftsMaterial.SetVector("_SunScreenPos", new Vector4(sunScreenPos.x, sunScreenPos.y, 1.0f, 1.0f));
+        sunShaftsMaterial.SetVector("_SunScreenPos", new Vector4(viewPos.x, viewPos.y, radialBlend, 1.0f));
+        sunShaftsMaterial.SetVector("_SunRayDir", new Vector4(rayDir2D.x, rayDir2D.y, 0f, 0f));
         sunShaftsMaterial.SetColor("_SunColor", sunColor);
         sunShaftsMaterial.SetFloat("_Density", density);
         sunShaftsMaterial.SetFloat("_Weight", weight);
