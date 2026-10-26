@@ -32,7 +32,7 @@ Shader "Hidden/SunShaftsPostProcess"
             {
                 fixed4 originalColor = tex2D(_MainTex, i.uv);
 
-                // Oryginalny wektor ze starego shadera (gdy patrzysz na słońce)
+                // Oryginalny wektor (gdy patrzysz w stronę słońca)
                 float2 radialDir = (i.uv - _SunScreenPos.xy);
 
                 // Stały wektor kierunkowy (gdy odwrócisz się bokiem lub tyłem)
@@ -46,7 +46,6 @@ Shader "Hidden/SunShaftsPostProcess"
                 float illuminationDecay = 1.0;
                 fixed4 rays = fixed4(0, 0, 0, 0);
 
-                // Dokładnie ta sama pętla co w pierwszym shaderze
                 for (int s = 0; s < NUM_SAMPLES; s++)
                 {
                     textCoo -= deltaTextCoord;
@@ -62,7 +61,13 @@ Shader "Hidden/SunShaftsPostProcess"
                     illuminationDecay *= _Decay;
                 }
 
-                return originalColor + (rays * _Exposure);
+                // Obliczenie promieni z ekspozycją
+                fixed4 finalRays = rays * _Exposure;
+
+                // Miękki tonemapping Reinhard: zabezpiecza przed wyjściem ponad 1.0 (likwiduje białą łunę)
+                finalRays.rgb = finalRays.rgb / (1.0 + finalRays.rgb);
+
+                return originalColor + finalRays;
             }
             ENDCG
         }

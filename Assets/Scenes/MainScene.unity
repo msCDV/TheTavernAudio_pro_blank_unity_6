@@ -1630,9 +1630,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SunShaftsEffect
   sunTransform: {fileID: 2003931977}
   sunColor: {r: 1, g: 0.72, b: 0.42, a: 1}
-  exposure: 0.8
+  exposure: 0.35
   density: 0.77
-  weight: 0.035
+  weight: 0.022
   decay: 0.96
 --- !u!1 &239062190
 GameObject:
@@ -28482,6 +28482,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1692370890}
+  - component: {fileID: 1692370891}
   m_Layer: 0
   m_Name: Fire_FX
   m_TagString: Untagged
@@ -28507,6 +28508,37 @@ Transform:
   - {fileID: 1724085478}
   m_Father: {fileID: 1568691898}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1692370891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1692370889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9a6610d2e704f1648819acc8d7460285, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FMODUnity::FMODUnity.StudioEventEmitter
+  CollisionTag: 
+  EventReference:
+    Guid:
+      Data1: -1448891276
+      Data2: 1132134398
+      Data3: 1126525614
+      Data4: 1244643740
+    Path: event:/Fire
+  Event: 
+  EventPlayTrigger: 1
+  EventStopTrigger: 0
+  AllowFadeout: 1
+  TriggerOnce: 0
+  Preload: 0
+  NonRigidbodyVelocity: 0
+  Params: []
+  OverrideAttenuation: 0
+  OverrideMinDistance: 1
+  OverrideMaxDistance: 20
 --- !u!1 &1694079563
 GameObject:
   m_ObjectHideFlags: 0
