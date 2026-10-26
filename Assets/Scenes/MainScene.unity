@@ -1630,10 +1630,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SunShaftsEffect
   sunTransform: {fileID: 2003931977}
   sunColor: {r: 1, g: 0.72, b: 0.42, a: 1}
-  exposure: 0.35
-  density: 0.77
-  weight: 0.022
-  decay: 0.96
+  exposure: 0.25
+  density: 0.271
+  weight: 0.08
+  decay: 0.9835
 --- !u!1 &239062190
 GameObject:
   m_ObjectHideFlags: 0

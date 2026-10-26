@@ -18,8 +18,7 @@ Shader "Hidden/SunShaftsPostProcess"
 
             sampler2D _MainTex;
             sampler2D _CameraDepthTexture;
-            float4 _SunScreenPos; // xy = pozycja słońca, z = radialBlend
-            float4 _SunRayDir;    // xy = kierunek promieni przy obrocie
+            float4 _SunScreenPos; // xy = pozycja słońca, z = widoczność (fade przy odwracaniu)
             float4 _SunColor;
             float _Density;
             float _Weight;
@@ -32,14 +31,11 @@ Shader "Hidden/SunShaftsPostProcess"
             {
                 fixed4 originalColor = tex2D(_MainTex, i.uv);
 
-                // Oryginalny wektor (gdy patrzysz w stronę słońca)
-                float2 radialDir = (i.uv - _SunScreenPos.xy);
+                // Gdy słońce jest za plecami, post-process jest w 100% wyłączony
+                if (_SunScreenPos.z <= 0.001 || _Exposure <= 0.001)
+                    return originalColor;
 
-                // Stały wektor kierunkowy (gdy odwrócisz się bokiem lub tyłem)
-                float2 parallelDir = _SunRayDir.xy * 0.7;
-
-                // Płynne przejście między nimi
-                float2 deltaTextCoord = lerp(parallelDir, radialDir, _SunScreenPos.z);
+                float2 deltaTextCoord = (i.uv - _SunScreenPos.xy);
                 deltaTextCoord *= (1.0 / float(NUM_SAMPLES)) * _Density;
 
                 float2 textCoo = i.uv;
@@ -50,10 +46,13 @@ Shader "Hidden/SunShaftsPostProcess"
                 {
                     textCoo -= deltaTextCoord;
 
-                    // Zabezpieczenie krawędzi ekranu przy obrocie kamery
-                    float2 sampleUV = saturate(textCoo);
+                    // Zabezpieczenie przed wychodzeniem poza krawędź ekranu
+                    if (textCoo.x < 0.0 || textCoo.x > 1.0 || textCoo.y < 0.0 || textCoo.y > 1.0)
+                        break;
 
-                    float depth = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, sampleUV));
+                    float depth = Linear01Depth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, textCoo));
+
+                    // Światło pobieramy wyłącznie z otwartego nieba
                     fixed4 sampleCol = (depth > 0.99) ? _SunColor : fixed4(0, 0, 0, 0);
 
                     sampleCol *= illuminationDecay * _Weight;
@@ -61,10 +60,8 @@ Shader "Hidden/SunShaftsPostProcess"
                     illuminationDecay *= _Decay;
                 }
 
-                // Obliczenie promieni z ekspozycją
-                fixed4 finalRays = rays * _Exposure;
-
-                // Miękki tonemapping Reinhard: zabezpiecza przed wyjściem ponad 1.0 (likwiduje białą łunę)
+                // Miękki tonemapping Reinhard: brak białej łuny, naturalny blask
+                fixed4 finalRays = rays * (_Exposure * _SunScreenPos.z);
                 finalRays.rgb = finalRays.rgb / (1.0 + finalRays.rgb);
 
                 return originalColor + finalRays;
